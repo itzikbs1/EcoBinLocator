@@ -23,10 +23,13 @@ export default function Index() {
   }
 
   const handlePress = () => {
+    console.log('====================================');
+    console.log('index.jsx line 27: ', binTypes);
+    console.log('====================================');
     router.push({
       pathname: '/Map',
       params: {
-        userLocation: location,
+        userLocation: JSON.stringify(location),
         selectedBinTypes: binTypes
       }
     });

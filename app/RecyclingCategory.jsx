@@ -22,6 +22,9 @@ export default function RecyclingCategory({ binTypes }) {
             : [...selectedList, item];
 
         setSelectedList(updatedList);
+        console.log('====================================');
+        console.log(`updatedList: ${updatedList}`);
+        console.log('====================================');
         binTypes?.(updatedList)
     }
     // const renderItem = ({ item }) => {
