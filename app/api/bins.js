@@ -1,3 +1,5 @@
+// import React from "react";
+
 // import { Platform } from 'react-native';
 import { API_URL } from '../../config/config';
 // import { getVersion } from 'react-native-device-info';
@@ -6,7 +8,7 @@ import { API_URL } from '../../config/config';
 // import { getVersion } from 'react-native-device-info';  
 // import { useLocalSearchParams } from 'expo-router';
 
-const findNearestBins = async ({ latitude, longitude, selectedBinTypes}) => {
+export const findNearestBins = async ({ latitude, longitude, selectedBinTypes}) => {
     try {
         // console.log('API Request Parameters:', { latitude, longitude, selectedBinTypes });
         // console.log(`API_URL: ${API_URL}`);
@@ -50,4 +52,4 @@ const findNearestBins = async ({ latitude, longitude, selectedBinTypes}) => {
     }
 }
 
-export default findNearestBins;
+// export default findNearestBins;

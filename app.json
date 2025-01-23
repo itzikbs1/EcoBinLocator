@@ -10,6 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       // "supportsTablet": true
+      "bundleIdentifier": "com.ecobinlocator",  // Add this line
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
@@ -22,6 +23,7 @@
       }
     },
     "android": {
+      "package": "com.ecobinlocator",  // Add this line
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"

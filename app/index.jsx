@@ -1,21 +1,22 @@
-import { Pressable, Text, View, StyleSheet, SafeAreaView } from "react-native";
-import LocationPermission from './LocationPermission';
-import RecyclingCategory from './RecyclingCategory';
+
 import { useState } from "react";
+import { Pressable, Text, View, StyleSheet, SafeAreaView } from "react-native";
+import { Ionicons } from 'react-native-vector-icons';
 import { useRouter } from "expo-router";
 
 import { indexColors } from './Colors';
+import LocationPermission from './LocationPermission';
+import RecyclingCategory from './RecyclingCategory';
+import Map from './Map';
 
 export default function Index() {
 
   const [location, setLocation] = useState({});
-  const [binTypes, setBinType] = useState([]);
+  // const [binTypes, setBinType] = useState([]);
+    
+  const [binTypes, setBinType] = useState(['Plastic', 'Glass', 'Paper', 'Electronic', 'Textile', 'Packaging', 'Cardboard']);
   
   const router = useRouter();
-
-  // const handleLocation = (location) => {
-  //   console.log('Location received: ', location);
-  // };
 
   const handleError = (error) => {
     console.error('Location error:', error);
@@ -23,9 +24,6 @@ export default function Index() {
   }
 
   const handlePress = () => {
-    // console.log('====================================');
-    // console.log('index.jsx line 27: ', binTypes);
-    // console.log('====================================');
     router.push({
       pathname: '/Map',
       params: {
@@ -49,6 +47,8 @@ export default function Index() {
             onError={handleError}
           />
         </View>
+
+        {/* <Map /> */}
 
         <View style={styles.section}>
           <RecyclingCategory
