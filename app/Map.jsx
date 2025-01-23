@@ -1,28 +1,47 @@
-import { useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Linking, Alert, Image, TouchableOpacity } from 'react-native';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, Linking, Alert, TouchableOpacity } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
-import MapViewDirections from 'react-native-maps-directions';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState, useEffect } from 'react';
+// import BottomSheet from 'reanimated-bottom-sheet';
+import BottomSheet from '@gorhom/bottom-sheet';
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+
+// import Checkbox from '@react-native-community/checkbox';
+
+import { useLocalSearchParams } from 'expo-router';
+import { Ionicons } from 'react-native-vector-icons';
+
+import { binColors } from './Colors';
 import { findNearestBins } from './api/bins.js';
 
+// import glassMarker from '../assets/images/glass-marker.jpg';
+// import plasticMarker from '../assets/images/plastic-marker.jpeg';
+import {
+    configureReanimatedLogger,
+    ReanimatedLogLevel,
+  } from 'react-native-reanimated';
 
-import glassMarker from '../assets/images/glass-marker.jpg';
-import plasticMarker from '../assets/images/plastic-marker.jpeg';
-
+// This is the default configuration
+configureReanimatedLogger({
+    level: ReanimatedLogLevel.warn,
+    strict: false, // Reanimated runs in strict mode by default
+  });
 
 export default function Map() {
-    const apiKey = process.env.EXPO_PUBLIC_API_KEY;
-    // console.log('====================================');
-    // console.log(apiKey);
-    // console.log('====================================');
-    const router = useRouter();
     const params = useLocalSearchParams();
     const [binsData, setBinsData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [destination, setDestination] = useState({});
-    const [selectedBin, setSelectedBin] = useState(null);
+    // const [destination, setDestination] = useState({});
+    // const [selectedBin, setSelectedBin] = useState(null);
+    
+    const [activeFiltered, setActiveFiltered] = useState(params.selectedBinTypes 
+        ? params.selectedBinTypes.toString().split(',')
+        : []);
+
+    const sheetRef = useRef(null);
+        
+    const bottomSheetRef = useRef(null);
+    const snapPoints = useMemo(() => ['25%', '50%'], []);
 
 
     const userLocation = (() => {
@@ -40,6 +59,7 @@ export default function Map() {
         ? params.selectedBinTypes.toString().split(',')
         : [];
 
+
     useEffect(() => {
         const fetchBins = async () => {
             if (!latitude || !longitude || selectedBinTypes.length === 0) {
@@ -52,7 +72,7 @@ export default function Map() {
                 const data = await findNearestBins({
                     latitude,
                     longitude,
-                    selectedBinTypes
+                    selectedBinTypes: activeFiltered
                 });
                 setBinsData(data);
             } catch (error) {
@@ -64,7 +84,7 @@ export default function Map() {
         };
 
         fetchBins();
-    }, [latitude, longitude, selectedBinTypes]);
+    }, [latitude, longitude, selectedBinTypes, activeFiltered]);
 
     
  
@@ -89,9 +109,9 @@ export default function Map() {
             ]
         );
     };
-    onMapPress = (coordinates) => {
-        setDestination(coordinates[1], coordinates[0])
-    }
+    // onMapPress = (coordinates) => {
+    //     setDestination(coordinates[1], coordinates[0])
+    // }
 
     const handleColor = (type) => {
         const colors = {
@@ -106,13 +126,37 @@ export default function Map() {
         return colors[type] || '#000000'; // Default black if type not found
     };
 
-    const getMarkerImage = (binType) => {
-        const images = {
-            Glass: glassMarker,
-            Plastic: plasticMarker
-        };
-        return images[binType] || null;
-    };
+
+    const FilterMenu = () => (
+        <View style={styles.filterContainer}>
+            {Object.entries(binColors).map(([type]) => (
+                <TouchableOpacity
+                    key={type}
+                    style={styles.checkboxRow}
+                    onPress={() => {
+                        setActiveFiltered(curr => 
+                            curr.includes(type)
+                            ? curr.filter(t => t !== type)
+                            : [...curr, type]
+                        )
+                    }}
+                >
+                    <View
+                        style={[
+                            styles.checkbox, 
+                            activeFiltered.includes(type) && styles.checkboxChecked
+                    ]} />
+                    <View style={[styles.colorDot, { backgroundColor: handleColor(type) }]} />
+                    <Text style={styles.label}>{type}</Text>
+                </TouchableOpacity>
+            ))}
+        </View>
+    )
+
+
+    const handleSheetChanges = useCallback((index) => {
+        console.log('handleSheetChanges', index);
+      }, []);
 
     if (loading) {
         return (
@@ -140,102 +184,56 @@ export default function Map() {
     }
 
     return (
-        <View style={styles.container}>
-            <MapView 
-                style={styles.map} 
-                initialRegion={{
-                    latitude,
-                    longitude,
-                    latitudeDelta: 0.0922,
-                    longitudeDelta: 0.0421,
-                }}
-                showsUserLocation={true}
-                showsMyLocationButton={true}
-            >
-                {binsData?.map((bin, index) => (
-                    
-                    <Marker
-                        key={index}
-                        coordinate={{
-                            latitude: bin.location.coordinates[1],
-                            longitude: bin.location.coordinates[0],
-                        }}
-                        onPress={() => {
-                            setSelectedBin(bin._id);
-                            onMapPress(bin.location.coordinates);
-                            handleViewPress(bin.location.coordinates);
-                        }}                        
-                    >
-                            <View>
-                                {/* Normal marker - smaller dot */}
-                                <View style={{
-                                    backgroundColor: handleColor(bin.bin_type_name),
-                                    width: 20,
-                                    height: 20,
-                                    borderRadius: 10,
-                                    borderWidth: 1.5,
-                                    borderColor: 'white',
-                                    shadowColor: '#000',
-                                    shadowOffset: { width: 0, height: 1 },
-                                    shadowOpacity: 0.2,
-                                    elevation: 2
-                                }} />
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <View style={styles.container}>
+                <TouchableOpacity 
+                    style={styles.menuButton} 
+                    onPress={() => bottomSheetRef.current?.snapToIndex(0)}
+                >
+                    <Ionicons name="menu" size={24} color="black" />
+                </TouchableOpacity>
 
-                                {/* Info popup - more compact and styled */}
-                                {selectedBin === bin._id && (
-                                        <View style={{
-                                            backgroundColor: 'white',
-                                            padding: 8,
-                                            borderRadius: 6,
-                                            shadowColor: '#000',
-                                            shadowOffset: { width: 0, height: 2 },
-                                            shadowOpacity: 0.25,
-                                            elevation: 3,
-                                            width: 60,
-                                            height: 85,
-                                            position: 'absolute',
-                                            left: -50,
-                                            top: 25
-                                        }}>
-                                            <Image 
-                                                source={getMarkerImage(bin.bin_type_name)} 
-                                                style={{
-                                                    width: 40, 
-                                                    height: 40, 
-                                                    borderRadius: 4,
-                                                    marginBottom: 4
-                                                }} 
-                                            />
-                                            <Text style={{
-                                                fontWeight: '600',
-                                                fontSize: 12,
-                                                marginBottom: 2
-                                            }}>{bin.bin_type_name}</Text>
-                                            <Text style={{
-                                                fontSize: 11,
-                                                color: '#666'
-                                            }}>{bin.city_name}</Text>
-                                        </View>
-                                )}
-                            </View>
-                    </Marker>
-                ))}
-                {/* {destination.length === 2 && (
-                    <MapViewDirections
-                        origin={{latitude, longitude}}
-                        destination={destination}
-                        apikey={apiKey}
-                        mode="WALKING"
-                        strokeWidth={2}
-                        strokeColor="hotpink"
-                        // optimizeWaypoints={true}
-                        onError={(errorMessage) => {
-                        // console.log('GOT AN ERROR');
-                        }}
-                    />
-                )} */}
-            </MapView>
-        </View>
+                <MapView 
+                    style={styles.map} 
+                    initialRegion={{
+                        latitude,
+                        longitude,
+                        latitudeDelta: 0.0922,
+                        longitudeDelta: 0.0421,
+                    }}
+                    showsUserLocation={true}
+                    showsMyLocationButton={true}
+                >
+                    {binsData?.map((bin, index) => (
+                        
+                        <Marker
+                            key={index}
+                            coordinate={{
+                                latitude: bin.location.coordinates[1],
+                                longitude: bin.location.coordinates[0],
+                            }}
+                            onPress={() => {
+                                handleViewPress(bin.location.coordinates);
+                            }}                        
+                        >
+                            <View style={[styles.binPoint, { backgroundColor: handleColor(bin.bin_type_name) }]} />
+                        </Marker>
+                    ))}
+                </MapView>
+
+                <BottomSheet
+                ref={bottomSheetRef}
+                index={1}
+                snapPoints={snapPoints}
+                onChange={handleSheetChanges}
+                enablePanDownToClose={false}
+                //    renderContent={() => <FilterMenu />}
+                //    initialSnap={1}
+            >
+                <FilterMenu />
+            </BottomSheet>
+            </View>
+        </GestureHandlerRootView>
     );
 }
 
@@ -244,6 +242,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        position: 'relative',
     },
     map: {
         width: '100%',
@@ -254,5 +253,117 @@ const styles = StyleSheet.create({
         fontSize: 16,
         textAlign: 'center',
         margin: 20,
-    }
+    },
+    menuButton: {
+        position: 'absolute',
+        top: 40,
+        right: 20,
+        zIndex: 1,
+        backgroundColor: 'white',
+        padding: 8,
+        borderRadius: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        elevation: 5,
+    },
+    binPoint: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        borderWidth: 1.5,
+        borderColor: 'white',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        elevation: 2
+    },
+
+
+
+    filterContainer: {
+        padding: 16,
+        backgroundColor: 'white',
+        height: '100%'
+      },
+      checkboxRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: 8
+      },
+      colorDot: {
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        marginHorizontal: 8
+      },
+      label: {
+        fontSize: 16
+      },
+      checkbox: {
+        width: 20,
+        height: 20,
+        borderWidth: 2,
+        borderColor: '#000',
+        borderRadius: 4,
+      },
+      checkboxChecked: {
+        backgroundColor: '#000',
+      },
 });
+
+
+
+
+// {/* <View>
+// {/* Normal marker - smaller dot */}
+// <View style={{
+// backgroundColor: handleColor(bin.bin_type_name),
+// width: 20,
+// height: 20,
+// borderRadius: 10,
+// borderWidth: 1.5,
+// borderColor: 'white',
+// shadowColor: '#000',
+// shadowOffset: { width: 0, height: 1 },
+// shadowOpacity: 0.2,
+// elevation: 2
+// }} />
+
+// {/* Info popup - more compact and styled */}
+// {selectedBin === bin._id && (
+//     <View style={{
+//         backgroundColor: 'white',
+//         padding: 8,
+//         borderRadius: 6,
+//         shadowColor: '#000',
+//         shadowOffset: { width: 0, height: 2 },
+//         shadowOpacity: 0.25,
+//         elevation: 3,
+//         width: 60,
+//         height: 85,
+//         position: 'absolute',
+//         left: -50,
+//         top: 25
+//     }}>
+//         <Image 
+//             source={getMarkerImage(bin.bin_type_name)} 
+//             style={{
+//                 width: 40, 
+//                 height: 40, 
+//                 borderRadius: 4,
+//                 marginBottom: 4
+//             }} 
+//         />
+//         <Text style={{
+//             fontWeight: '600',
+//             fontSize: 12,
+//             marginBottom: 2
+//         }}>{bin.bin_type_name}</Text>
+//         <Text style={{
+//             fontSize: 11,
+//             color: '#666'
+//         }}>{bin.city_name}</Text>
+//     </View>
+// )}
+// </View> */}

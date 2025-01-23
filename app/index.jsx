@@ -1,20 +1,18 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, Text, View, StyleSheet, SafeAreaView } from "react-native";
-import { Ionicons } from 'react-native-vector-icons';
 import { useRouter } from "expo-router";
 
 import { indexColors } from './Colors';
 import LocationPermission from './LocationPermission';
 import RecyclingCategory from './RecyclingCategory';
-import Map from './Map';
 
 export default function Index() {
 
   const [location, setLocation] = useState({});
   // const [binTypes, setBinType] = useState([]);
     
-  const [binTypes, setBinType] = useState(['Plastic', 'Glass', 'Paper', 'Electronic', 'Textile', 'Packaging', 'Cardboard']);
+  const [binTypes, setBinTypes] = useState(['Plastic', 'Glass', 'Paper', 'Electronic', 'Textile', 'Packaging', 'Cardboard']);
   
   const router = useRouter();
 
@@ -22,16 +20,25 @@ export default function Index() {
     console.error('Location error:', error);
     Alert.alert('Error', 'Failed to get location. Please try again.');
   }
-
-  const handlePress = () => {
-    router.push({
-      pathname: '/Map',
-      params: {
-        userLocation: JSON.stringify(location),
-        selectedBinTypes: binTypes
-      }
-    });
+  
+  const handleLocationReceived = (loc) => {
+    setLocation(loc);
   }
+
+  useEffect(() => {
+    if (location) {
+      setTimeout(() => {
+        router.push({
+        pathname: '/Map',
+        params: {
+          userLocation: JSON.stringify(location),
+          selectedBinTypes: binTypes  
+        }
+        });
+      }, 100);
+    }
+  }, [location])
+
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -43,34 +50,10 @@ export default function Index() {
       <View style={styles.content}>
         <View style={styles.section}>
           <LocationPermission
-            onLocationReceived={setLocation}
+            onLocationReceived={handleLocationReceived}
             onError={handleError}
           />
-        </View>
-
-        {/* <Map /> */}
-
-        <View style={styles.section}>
-          <RecyclingCategory
-            binTypes={setBinType}
-            // onError={handleError}
-          />
-          {binTypes.length > 0 ? 
-          (<Pressable 
-            onPress={handlePress}
-            style={({ pressed }) => [
-              styles.button,
-              pressed && styles.buttonPressed
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Find closest recycling bin"
-          >
-            <Text style={styles.buttonText}>Let's find the closest bin!</Text>
-          </Pressable>)
-          : (<Text style={styles.helperText}>Please select recycling categories to continue</Text>)
-          }
-        </View>
-        
+        </View>        
       </View>
     </View>
     </SafeAreaView>

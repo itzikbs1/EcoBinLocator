@@ -22,7 +22,7 @@ export default function LocationPermission({ onLocationReceived, onError }) {
                 const currentLocation = await Location.getCurrentPositionAsync({
                     accuracy: Location.Accuracy.High,
                 });
-                setLocation(currentLocation);
+                // setLocation(currentLocation);
                 onLocationReceived?.(currentLocation);
             } catch(error) {
                 const errorMessage = error instanceof Error ? error.message : 'Failed to get location';

@@ -9,8 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      // "supportsTablet": true
-      "bundleIdentifier": "com.ecobinlocator",  // Add this line
+      "bundleIdentifier": "com.ecobinlocator",
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
@@ -23,7 +22,7 @@
       }
     },
     "android": {
-      "package": "com.ecobinlocator",  // Add this line
+      "package": "com.ecobinlocator",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -45,14 +44,6 @@
           "backgroundColor": "#ffffff"
         }
       ]
-      // ,
-      // [
-      //   "expo-location",
-      //   {
-      //     "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
-      //   }
-      // ]
-      
     ],
     "experiments": {
       "typedRoutes": true

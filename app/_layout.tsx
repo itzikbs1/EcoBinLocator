@@ -28,33 +28,22 @@
 import React from "react";
 import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-// import LocationPermission from "./LocationPermission";
-// import { useState, useEffect } from "react";
-// import { View, Text } from "react-native";
-
-// console.log("Layout React:", React); // Add this at the top after imports
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import "react-native-gesture-handler";
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        {/* <Stack.Screen name="index" />
-        <Stack.Screen name="Map" /> */}
-        <Stack>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen
             name="index"
             options={{
               headerShown: false,
             }}
           />
-          {/* <Stack.Screen
-            name="Map"
-            options={{
-              headerShown: false,
-            }}
-          /> */}
         </Stack>
-      </Stack>
-    </SafeAreaProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

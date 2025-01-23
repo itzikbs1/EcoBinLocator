@@ -12,3 +12,13 @@ export const indexColors = {
     border: '#E0E0E0',
     lightGray: '#F5F5F5',
 };
+
+export const binColors  = {
+  Plastic: '#ff8c00',
+  Paper: '#964B00',
+  Glass: '#800080',
+  Electronic: '#808080',
+  Textile: '#FF69B4',
+  Packaging: '#4B0082',
+  Cardboard: '#8B4513'
+};
