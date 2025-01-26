@@ -1,47 +1,29 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Linking, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Linking, Alert, TouchableOpacity, Modal, FlatList } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
-// import BottomSheet from 'reanimated-bottom-sheet';
-import BottomSheet from '@gorhom/bottom-sheet';
-import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-// import Checkbox from '@react-native-community/checkbox';
+import { CheckBox } from '@rneui/themed';
 
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from 'react-native-vector-icons';
 
 import { binColors } from './Colors';
 import { findNearestBins } from './api/bins.js';
+import { binTypes } from './binTypes';
 
-// import glassMarker from '../assets/images/glass-marker.jpg';
-// import plasticMarker from '../assets/images/plastic-marker.jpeg';
-import {
-    configureReanimatedLogger,
-    ReanimatedLogLevel,
-  } from 'react-native-reanimated';
-
-// This is the default configuration
-configureReanimatedLogger({
-    level: ReanimatedLogLevel.warn,
-    strict: false, // Reanimated runs in strict mode by default
-  });
 
 export default function Map() {
     const params = useLocalSearchParams();
     const [binsData, setBinsData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    // const [destination, setDestination] = useState({});
-    // const [selectedBin, setSelectedBin] = useState(null);
+    const [isOpen, setIsOpen] = useState(false);
+    const types = binTypes.map(item => item.value);
+
     
     const [activeFiltered, setActiveFiltered] = useState(params.selectedBinTypes 
         ? params.selectedBinTypes.toString().split(',')
         : []);
-
-    const sheetRef = useRef(null);
-        
-    const bottomSheetRef = useRef(null);
-    const snapPoints = useMemo(() => ['25%', '50%'], []);
 
 
     const userLocation = (() => {
@@ -109,9 +91,6 @@ export default function Map() {
             ]
         );
     };
-    // onMapPress = (coordinates) => {
-    //     setDestination(coordinates[1], coordinates[0])
-    // }
 
     const handleColor = (type) => {
         const colors = {
@@ -127,36 +106,13 @@ export default function Map() {
     };
 
 
-    const FilterMenu = () => (
-        <View style={styles.filterContainer}>
-            {Object.entries(binColors).map(([type]) => (
-                <TouchableOpacity
-                    key={type}
-                    style={styles.checkboxRow}
-                    onPress={() => {
-                        setActiveFiltered(curr => 
-                            curr.includes(type)
-                            ? curr.filter(t => t !== type)
-                            : [...curr, type]
-                        )
-                    }}
-                >
-                    <View
-                        style={[
-                            styles.checkbox, 
-                            activeFiltered.includes(type) && styles.checkboxChecked
-                    ]} />
-                    <View style={[styles.colorDot, { backgroundColor: handleColor(type) }]} />
-                    <Text style={styles.label}>{type}</Text>
-                </TouchableOpacity>
-            ))}
-        </View>
-    )
+    const handleType = (item) => {
+        const newFilteredItems = activeFiltered.includes(item)
+            ? activeFiltered.filter(it => it !== item)
+            : [...activeFiltered, item];
 
-
-    const handleSheetChanges = useCallback((index) => {
-        console.log('handleSheetChanges', index);
-      }, []);
+        setActiveFiltered(newFilteredItems);
+    }
 
     if (loading) {
         return (
@@ -184,15 +140,49 @@ export default function Map() {
     }
 
     return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
             <View style={styles.container}>
-                <TouchableOpacity 
-                    style={styles.menuButton} 
-                    onPress={() => bottomSheetRef.current?.snapToIndex(0)}
+                <TouchableOpacity
+                    style={styles.menuButton}
+                    onPress={() => setIsOpen(!isOpen)}
                 >
-                    <Ionicons name="menu" size={24} color="black" />
+                    <Ionicons name={isOpen ? 'close' : 'menu'} size={24} color="black" />
+                    <Text style={styles.menuText}>{isOpen ? 'Close Menu' : 'Open Menu'}</Text>
                 </TouchableOpacity>
 
+                <Modal
+                    visible={isOpen}
+                    animationType="slide"
+                    transparent={true}
+                    onRequestClose={() => setIsOpen(false)}
+                >
+                    <TouchableOpacity
+                        style={styles.modalContainer}
+                        activeOpacity={1}
+                        onPress={() => setIsOpen(false)}
+                    >
+                        <TouchableOpacity
+                            style={styles.modalContent}
+                            activeOpacity={1}
+                            onPress={(e) => e.stopPropagation()}
+                        >
+                            <FlatList
+                                data={types}
+                                renderItem={({ item }) => (
+                                    <View style={styles.checkboxRow}>
+                                    <CheckBox
+                                        checked={activeFiltered.includes(item)}
+                                        onPress={ () => handleType(item) }
+                                        containerStyle={styles.checkbox}
+                                    />
+                                        <View style={[styles.colorDot, { backgroundColor: handleColor(item) }]} />
+                                        <Text style={styles.label}>{item}</Text>
+                                    </View>
+                                )}
+                                keyExtractor={item => item}
+                            />
+                        </TouchableOpacity>
+                    </TouchableOpacity>
+                </Modal>
                 <MapView 
                     style={styles.map} 
                     initialRegion={{
@@ -220,20 +210,7 @@ export default function Map() {
                         </Marker>
                     ))}
                 </MapView>
-
-                <BottomSheet
-                ref={bottomSheetRef}
-                index={1}
-                snapPoints={snapPoints}
-                onChange={handleSheetChanges}
-                enablePanDownToClose={false}
-                //    renderContent={() => <FilterMenu />}
-                //    initialSnap={1}
-            >
-                <FilterMenu />
-            </BottomSheet>
             </View>
-        </GestureHandlerRootView>
     );
 }
 
@@ -254,19 +231,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         margin: 20,
     },
-    menuButton: {
-        position: 'absolute',
-        top: 40,
-        right: 20,
-        zIndex: 1,
-        backgroundColor: 'white',
-        padding: 8,
-        borderRadius: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        elevation: 5,
-    },
     binPoint: {
         width: 20,
         height: 20,
@@ -278,92 +242,63 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         elevation: 2
     },
-
-
-
-    filterContainer: {
-        padding: 16,
-        backgroundColor: 'white',
-        height: '100%'
-      },
-      checkboxRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginVertical: 8
-      },
-      colorDot: {
+    colorDot: {
         width: 12,
         height: 12,
         borderRadius: 6,
         marginHorizontal: 8
-      },
-      label: {
+    },
+    label: {
         fontSize: 16
-      },
-      checkbox: {
-        width: 20,
-        height: 20,
-        borderWidth: 2,
-        borderColor: '#000',
-        borderRadius: 4,
-      },
-      checkboxChecked: {
-        backgroundColor: '#000',
-      },
+    },
+    checkbox: {
+        margin: 0,
+        padding: 0,
+        alignSelf: 'center',
+    },
+    checkboxRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: 8,
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+    },
+    menuButton: { 
+        position: 'absolute',
+        top: 40,
+        right: 20,
+        zIndex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#3B82F6',
+        padding: 12,
+        borderRadius: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        elevation: 5
+    },
+    menuText: { 
+        color: 'white', 
+        marginLeft: 8 
+    },
+    modalContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        alignItems: 'flex-end',
+        paddingTop: 80,
+        paddingRight: 20
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        borderRadius: 8,
+        padding: 16,
+        width: '55%',
+        maxHeight: '60%',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        elevation: 5,
+        // overflow: 'hidden'
+    },
 });
-
-
-
-
-// {/* <View>
-// {/* Normal marker - smaller dot */}
-// <View style={{
-// backgroundColor: handleColor(bin.bin_type_name),
-// width: 20,
-// height: 20,
-// borderRadius: 10,
-// borderWidth: 1.5,
-// borderColor: 'white',
-// shadowColor: '#000',
-// shadowOffset: { width: 0, height: 1 },
-// shadowOpacity: 0.2,
-// elevation: 2
-// }} />
-
-// {/* Info popup - more compact and styled */}
-// {selectedBin === bin._id && (
-//     <View style={{
-//         backgroundColor: 'white',
-//         padding: 8,
-//         borderRadius: 6,
-//         shadowColor: '#000',
-//         shadowOffset: { width: 0, height: 2 },
-//         shadowOpacity: 0.25,
-//         elevation: 3,
-//         width: 60,
-//         height: 85,
-//         position: 'absolute',
-//         left: -50,
-//         top: 25
-//     }}>
-//         <Image 
-//             source={getMarkerImage(bin.bin_type_name)} 
-//             style={{
-//                 width: 40, 
-//                 height: 40, 
-//                 borderRadius: 4,
-//                 marginBottom: 4
-//             }} 
-//         />
-//         <Text style={{
-//             fontWeight: '600',
-//             fontSize: 12,
-//             marginBottom: 2
-//         }}>{bin.bin_type_name}</Text>
-//         <Text style={{
-//             fontSize: 11,
-//             color: '#666'
-//         }}>{bin.city_name}</Text>
-//     </View>
-// )}
-// </View> */}

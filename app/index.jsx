@@ -5,14 +5,15 @@ import { useRouter } from "expo-router";
 
 import { indexColors } from './Colors';
 import LocationPermission from './LocationPermission';
-import RecyclingCategory from './RecyclingCategory';
+import { binTypes } from "./binTypes";
+// import RecyclingCategory from './RecyclingCategory';
 
 export default function Index() {
 
   const [location, setLocation] = useState({});
   // const [binTypes, setBinType] = useState([]);
     
-  const [binTypes, setBinTypes] = useState(['Plastic', 'Glass', 'Paper', 'Electronic', 'Textile', 'Packaging', 'Cardboard']);
+  const types = binTypes.map(item => item.value);
   
   const router = useRouter();
 
@@ -32,7 +33,7 @@ export default function Index() {
         pathname: '/Map',
         params: {
           userLocation: JSON.stringify(location),
-          selectedBinTypes: binTypes  
+          selectedBinTypes: types  
         }
         });
       }, 100);

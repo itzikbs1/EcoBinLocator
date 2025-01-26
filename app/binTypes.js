@@ -1,4 +1,4 @@
-export const bins = [
+export const binTypes = [
     { key: 1, value: 'Plastic' },
     { key: 2, value: 'Paper' },
     { key: 3, value: 'Glass' },
@@ -7,13 +7,3 @@ export const bins = [
     { key: 6, value: 'Packaging' },
     { key: 7, value: 'Cardboard' }
 ];
-
-// export default bins = [
-//     'Plastic',
-//     'Paper',
-//     'Glass',
-//     'Electronic',
-//     'Textile',
-//     'Packaging',
-//     'Cardboard'
-// ]
